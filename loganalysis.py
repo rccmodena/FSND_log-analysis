@@ -130,14 +130,20 @@ class LogAnalysis:
 
     Methods
     -------
+    execute_query(query)
+        Execute a query in the `news` db
+
+    get_question_one()
+        Returns the question one
+
     get_answer_one()
-        Execute the query for the question one and returns the answer
+        Returns answer one formatted to print
 
     get_answer_two()
-        Execute the query for the question two and returns the answer
+        Returns answer two formatted to print
 
     get_answer_three()
-        Execute the query for the question three and returns the answer
+        Returns answer three formatted to print
     """
 
     # Log Analysis questions
@@ -147,16 +153,73 @@ class LogAnalysis:
         "3. On which days did more than 1% of requests lead to errors?"
     )
 
-    # Log Analysis ueries
-    QUERY_QUESTION_1 = "SELECT * FROM articles;"
+    # Log Analysis queries
+    QUERY_QUESTION_1 = ("SELECT a.title, "
+                        "   count(b.id) AS VIEWS "
+                        "FROM articles a "
+                        "INNER JOIN log b ON a.slug = substring(b.path, 10) "
+                        "GROUP BY a.title "
+                        "ORDER BY VIEWS DESC limit 3;")
+
     QUERY_QUESTION_2 = "SELECT * FROM authors;"
     QUERY_QUESTION_3 = "SELECT * FROM log;"
 
     def __init__(self):
-        pass
+        """
+        Initialize answer_one, answer_two and answer_three as None
+        """
+        self.answer_one = None
+        self.answer_two = None
+        self.answer_three = None
+
+    def execute_query(self, query):
+        """
+        Execute a query in the `news` db
+
+        Parameters
+        ----------
+        query : str
+            SQL query to be executed
+
+        Returns
+        -------
+        list of tuple
+            return of a SQL query
+        """
+        answer = ""
+        with DBCursor() as cursor:
+            cursor.execute(query)
+            answer = cursor.fetchall()
+        return answer
+
+    def get_question_one(self):
+        """
+        Get the question one title
+
+        Returns
+        -------
+        str
+            the question one title
+        """
+        return self.QUESTION_1
 
     def get_answer_one(self):
-        pass
+        """
+        Get the answer one formatted to print
+
+        Execute the query `QUERY_QUESTION_1`, and convert the list of
+        tuples to a string with line breaks, and the following structure:
+
+        "Title of the article" - 9999 views
+
+        Returns
+        -------
+        str
+            the answer one formatted to print
+        """
+
+        self.answer_one = self.execute_query(self.QUERY_QUESTION_1)
+        return "\n".join('"%s" - %s views' % tupl for tupl in self.answer_one)
 
     def get_answer_two(self):
         pass
@@ -173,6 +236,9 @@ def main():
     print "\n*** Log analysis reporting tool - Version 0.1 ***\n"
 
     # TODO: Print Question One
+    print log.get_question_one() + "\n"
+    print log.get_answer_one()
+    print "\n"
 
     # TODO: Print Question Two
 
