@@ -67,14 +67,24 @@ class DBCursor:
     """
 
     def __init__(self):
-        pass
+        self.connection = None
+        self.cursor = None
 
     def __enter__(self):
-        pass
+        self.connection = psycopg2.connect("dbname=news")
+        self.cursor = self.connection.cursor()
+        return self.cursor
 
     def __exit__(self, exception_type, exception_value, exception_traceback):
-        pass
+        # Verify if the query throws an exception
+        if exception_value:
+            print "Error executing query!"
 
+        # Close the connection
+        self.connection.close()
+
+        # return True to don't throw up the exception
+        return True
 
 class LogAnalysis:
     """
@@ -142,6 +152,12 @@ def main():
     # TODO: Print Question Two
 
     # TODO: Print Question Three
+
+    # TEST CONNECTION
+    with DBCursor() as cursor:
+        cursor.execute("SELECT name "
+                       "FROM authors;")
+        print cursor.fetchall()
 
 
 if __name__ == '__main__':
