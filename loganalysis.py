@@ -139,6 +139,9 @@ class LogAnalysis:
     get_answer_one()
         Returns answer one formatted to print
 
+    get_question_two()
+        Returns the question two
+
     get_answer_two()
         Returns answer two formatted to print
 
@@ -161,7 +164,14 @@ class LogAnalysis:
                         "GROUP BY a.title "
                         "ORDER BY VIEWS DESC limit 3;")
 
-    QUERY_QUESTION_2 = "SELECT * FROM authors;"
+    QUERY_QUESTION_2 = ("SELECT a.name, "
+                        "	count(b.id) AS VIEWS "
+                        "FROM authors a "
+                        "INNER JOIN articles b ON a.id = b.author "
+                        "INNER JOIN log c ON b.slug = substring(c.path, 10) "
+                        "GROUP BY a.name "
+                        "ORDER BY VIEWS DESC;")
+
     QUERY_QUESTION_3 = "SELECT * FROM log;"
 
     def __init__(self):
@@ -221,8 +231,34 @@ class LogAnalysis:
         self.answer_one = self.execute_query(self.QUERY_QUESTION_1)
         return "\n".join('"%s" - %s views' % tupl for tupl in self.answer_one)
 
+    def get_question_two(self):
+        """
+        Get the question two title
+
+        Returns
+        -------
+        str
+            the question two title
+        """
+        return self.QUESTION_2
+
     def get_answer_two(self):
-        pass
+        """
+        Get the answer two formatted to print
+
+        Execute the query `QUERY_QUESTION_2`, and convert the list of
+        tuples to a string with line breaks, and the following structure:
+
+        "Author's name" - 9999 views
+
+        Returns
+        -------
+        str
+            the answer two formatted to print
+        """
+
+        self.answer_two = self.execute_query(self.QUERY_QUESTION_2)
+        return "\n".join('"%s" - %s views' % tupl for tupl in self.answer_two)
 
     def get_answer_three(self):
         pass
@@ -235,12 +271,13 @@ def main():
     # Print Header with version
     print "\n*** Log analysis reporting tool - Version 0.1 ***\n"
 
-    # TODO: Print Question One
     print log.get_question_one() + "\n"
     print log.get_answer_one()
     print "\n"
 
-    # TODO: Print Question Two
+    print log.get_question_two() + "\n"
+    print log.get_answer_two()
+    print "\n"
 
     # TODO: Print Question Three
 
