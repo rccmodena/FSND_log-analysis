@@ -21,6 +21,21 @@ with the respective answers. The questions are:
     2. Who are the most popular article authors of all time?
     3. On which days did more than 1% of requests lead to errors?
 
+To help get the answers for the questions, it was created two views:
+
+CREATE VIEW articles_views
+AS
+SELECT a.title AS title,
+	count(b.id) AS number_views,
+	a.author AS author
+FROM articles a
+INNER JOIN log b ON a.slug = substring(b.path, 10)
+GROUP BY a.title,
+	a.author;
+
+TODO: PUT THE OTHER VIEW CODE
+
+
 This script requires that `psycopg2` be installed within the Python 2.7
 environment you are running this script in. Also it needs that the
 database `news` is up and running on PostgreSQL.
@@ -35,8 +50,6 @@ classes and functions:
     the 3 questions
 
     * function main - the main function of the script
-
-    TODO: VERIFY THE NECESSITY OF CREATING A VIEW IN THE DB AND PUT HERE
 """
 
 import psycopg2
@@ -161,22 +174,19 @@ class LogAnalysis:
 
     # Log Analysis queries
     QUERY_QUESTION_1 = (
-        "SELECT a.title, "
-        "   count(b.id) AS VIEWS "
-        "FROM articles a "
-        "INNER JOIN log b ON a.slug = substring(b.path, 10) "
-        "GROUP BY a.title "
-        "ORDER BY VIEWS DESC limit 3;"
+        "SELECT title, "
+        "	number_views "
+        "FROM articles_views "
+        "ORDER BY number_views DESC limit 3;"
     )
 
     QUERY_QUESTION_2 = (
         "SELECT a.name, "
-        "	count(b.id) AS VIEWS "
+        "	sum(b.number_views) AS number_views "
         "FROM authors a "
-        "INNER JOIN articles b ON a.id = b.author "
-        "INNER JOIN log c ON b.slug = substring(c.path, 10) "
+        "INNER JOIN articles_views b ON a.id = b.author "
         "GROUP BY a.name "
-        "ORDER BY VIEWS DESC;"
+        "ORDER BY number_views DESC;"
     )
 
     QUERY_QUESTION_3 = (
