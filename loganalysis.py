@@ -145,6 +145,9 @@ class LogAnalysis:
     get_answer_two()
         Returns answer two formatted to print
 
+    get_question_three()
+        Returns the question three
+
     get_answer_three()
         Returns answer three formatted to print
     """
@@ -157,22 +160,48 @@ class LogAnalysis:
     )
 
     # Log Analysis queries
-    QUERY_QUESTION_1 = ("SELECT a.title, "
-                        "   count(b.id) AS VIEWS "
-                        "FROM articles a "
-                        "INNER JOIN log b ON a.slug = substring(b.path, 10) "
-                        "GROUP BY a.title "
-                        "ORDER BY VIEWS DESC limit 3;")
+    QUERY_QUESTION_1 = (
+        "SELECT a.title, "
+        "   count(b.id) AS VIEWS "
+        "FROM articles a "
+        "INNER JOIN log b ON a.slug = substring(b.path, 10) "
+        "GROUP BY a.title "
+        "ORDER BY VIEWS DESC limit 3;"
+    )
 
-    QUERY_QUESTION_2 = ("SELECT a.name, "
-                        "	count(b.id) AS VIEWS "
-                        "FROM authors a "
-                        "INNER JOIN articles b ON a.id = b.author "
-                        "INNER JOIN log c ON b.slug = substring(c.path, 10) "
-                        "GROUP BY a.name "
-                        "ORDER BY VIEWS DESC;")
+    QUERY_QUESTION_2 = (
+        "SELECT a.name, "
+        "	count(b.id) AS VIEWS "
+        "FROM authors a "
+        "INNER JOIN articles b ON a.id = b.author "
+        "INNER JOIN log c ON b.slug = substring(c.path, 10) "
+        "GROUP BY a.name "
+        "ORDER BY VIEWS DESC;"
+    )
 
-    QUERY_QUESTION_3 = "SELECT * FROM log;"
+    QUERY_QUESTION_3 = (
+        "SELECT to_char(log_date, 'FMMonth dd, yyyy'), "
+        "	error_per_day "
+        "FROM ( "
+        "	SELECT a.log_date AS log_date, "
+        "		round(b.request_erro * 100.0 / a.request_total, 1) AS error_per_day "
+        "	FROM ( "
+        "		SELECT DATE (TIME) AS log_date, "
+        "			count(id) AS request_total "
+        "		FROM log "
+        "		GROUP BY DATE (TIME) "
+        "		ORDER BY DATE (TIME) "
+        "		) AS a "
+        "	INNER JOIN ( "
+        "		SELECT DATE (TIME) AS log_date, "
+        "			count(path) AS request_erro "
+        "		FROM log a "
+        "		WHERE STATUS LIKE '404%' "
+        "		GROUP BY DATE (TIME) "
+        "		) AS b ON a.log_date = b.log_date "
+        "	) AS perc_table "
+        "WHERE error_per_day > 1.0;"
+    )
 
     def __init__(self):
         """
@@ -258,10 +287,36 @@ class LogAnalysis:
         """
 
         self.answer_two = self.execute_query(self.QUERY_QUESTION_2)
-        return "\n".join('"%s" - %s views' % tupl for tupl in self.answer_two)
+        return "\n".join('%s - %s views' % tupl for tupl in self.answer_two)
+
+    def get_question_three(self):
+        """
+        Get the question three title
+
+        Returns
+        -------
+        str
+            the question three title
+        """
+        return self.QUESTION_3
 
     def get_answer_three(self):
-        pass
+        """
+        Get the answer three formatted to print
+
+        Execute the query `QUERY_QUESTION_3`, and convert the list of
+        tuples to a string with line breaks, and the following structure:
+
+        Month day, Year — x.x% errors
+
+        Returns
+        -------
+        str
+            the answer three formatted to print
+        """
+
+        self.answer_three = self.execute_query(self.QUERY_QUESTION_3)
+        return "\n".join('%s - %s%% errors' % tupl for tupl in self.answer_three)
 
 
 def main():
@@ -279,7 +334,9 @@ def main():
     print log.get_answer_two()
     print "\n"
 
-    # TODO: Print Question Three
+    print log.get_question_three() + "\n"
+    print log.get_answer_three()
+    print "\n"
 
 
 if __name__ == '__main__':
