@@ -26,15 +26,32 @@ To help get the answers for the questions, it was created two views:
 CREATE VIEW articles_views
 AS
 SELECT a.title AS title,
-	count(b.id) AS number_views,
-	a.author AS author
+    count(b.id) AS number_views,
+    a.author AS author
 FROM articles a
 INNER JOIN log b ON a.slug = substring(b.path, 10)
 GROUP BY a.title,
-	a.author;
+    a.author;
 
-TODO: PUT THE OTHER VIEW CODE
 
+CREATE VIEW percent_errors
+AS
+SELECT a.log_date AS log_date,
+    round(b.request_erro * 100.0 / a.request_total, 1) AS error_per_day
+FROM (
+    SELECT DATE (TIME) AS log_date,
+        count(id) AS request_total
+    FROM log
+    GROUP BY DATE (TIME)
+    ORDER BY DATE (TIME)
+    ) AS a
+INNER JOIN (
+    SELECT DATE (TIME) AS log_date,
+        count(path) AS request_erro
+    FROM log a
+    WHERE STATUS LIKE '404%'
+    GROUP BY DATE (TIME)
+    ) AS b ON a.log_date = b.log_date;
 
 This script requires that `psycopg2` be installed within the Python 2.7
 environment you are running this script in. Also it needs that the
@@ -192,24 +209,7 @@ class LogAnalysis:
     QUERY_QUESTION_3 = (
         "SELECT to_char(log_date, 'FMMonth dd, yyyy'), "
         "	error_per_day "
-        "FROM ( "
-        "	SELECT a.log_date AS log_date, "
-        "		round(b.request_erro * 100.0 / a.request_total, 1) AS error_per_day "
-        "	FROM ( "
-        "		SELECT DATE (TIME) AS log_date, "
-        "			count(id) AS request_total "
-        "		FROM log "
-        "		GROUP BY DATE (TIME) "
-        "		ORDER BY DATE (TIME) "
-        "		) AS a "
-        "	INNER JOIN ( "
-        "		SELECT DATE (TIME) AS log_date, "
-        "			count(path) AS request_erro "
-        "		FROM log a "
-        "		WHERE STATUS LIKE '404%' "
-        "		GROUP BY DATE (TIME) "
-        "		) AS b ON a.log_date = b.log_date "
-        "	) AS perc_table "
+        "FROM percent_errors "
         "WHERE error_per_day > 1.0;"
     )
 
@@ -326,7 +326,9 @@ class LogAnalysis:
         """
 
         self.answer_three = self.execute_query(self.QUERY_QUESTION_3)
-        return "\n".join('%s - %s%% errors' % tupl for tupl in self.answer_three)
+        return "\n".join(
+            '%s - %s%% errors' % tupl for tupl in self.answer_three
+        )
 
 
 def main():
