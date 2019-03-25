@@ -42,7 +42,7 @@ The program will run from the command line. It won't take any input from the use
 
 ## Installation
 
-To install this project you need to follow 3 major steps:
+To install this project you need to follow 4 major steps:
 
 #### 1 - Virtual Machine
 
@@ -72,8 +72,28 @@ $ psql -d news -f newsdata.sql.
 
 Running this command will connect to your installed database server and execute the SQL commands in the downloaded file, creating tables and populating them with data.
 
-**TODO:  VERIFY THE NECESSITY OF CREATING A VIEW IN THE DB, IF IT IS NECESSARY, PUT THE INSTRUCTIONS HERE**
+#### 3 - Views
 
+To help get the answers for the questions, it was created two views:
+
+- articles_views
+
+- percent_errors
+
+You will need to create these views running the following commands, inside the folder vagrant on the vitual machine:
+
+```sh
+$ psql news
+psql (9.5.14)
+Type "help" for help.
+
+news=> create view articles_views as select a.title as title, count(b.id) as number_views, a.author as author from articles a inner join log b on a.slug = substring(b.path, 10) group by a.title, a.author;
+CREATE VIEW
+news=> create view percent_errors as select a.log_date as log_date, round(b.request_erro * 100.0 / a.request_total, 1) as error_per_day from (select date(time) as log_date, count(id) as request_total from log group by date(time) order by date(time)) as a
+news-> inner join (select date(time) as log_date, count(path) as request_erro from log a where status like '404%' group by date(time)) as b on a.log_date = b.log_date;
+CREATE VIEW
+news=>
+```
 
 ## Requirements
 
@@ -87,9 +107,12 @@ The Database:
 
 ## Running the Log analysis
 
-**TODO:** Explain how to run the program
+To run the program, you only need to type the following command, inside the folder vagrant on the vitual machine:
+```sh
+$ python loganalysis.py
+```
 
-**TODO:** Put a piece of the output of the program, and the link to the file containing the full output
+To see an example of output [click here](loganalysis_output.txt).
 
 ## Code Quality
 
@@ -132,7 +155,44 @@ The table authors has 4 rows.
 
 The table log has 1.667.735 rows.
 
-**TODO:  VERIFY THE NECESSITY OF CREATING A VIEW IN THE DB, IF IT IS NECESSARY, PUT THE INSTRUCTIONS HERE**
+In order to help get the answers for the questions, it was created two views:
+
+#### articles_views
+
+```
+CREATE VIEW articles_views
+AS
+SELECT a.title AS title,
+    count(b.id) AS number_views,
+    a.author AS author
+FROM articles a
+INNER JOIN log b ON a.slug = substring(b.path, 10)
+GROUP BY a.title,
+    a.author;
+```
+
+#### percent_errors
+
+```
+CREATE VIEW percent_errors
+AS
+SELECT a.log_date AS log_date,
+    round(b.request_erro * 100.0 / a.request_total, 1) AS error_per_day
+FROM (
+    SELECT DATE (TIME) AS log_date,
+        count(id) AS request_total
+    FROM log
+    GROUP BY DATE (TIME)
+    ORDER BY DATE (TIME)
+    ) AS a
+INNER JOIN (
+    SELECT DATE (TIME) AS log_date,
+        count(path) AS request_erro
+    FROM log a
+    WHERE STATUS LIKE '404%'
+    GROUP BY DATE (TIME)
+    ) AS b ON a.log_date = b.log_date;
+```
 
 ## How to Contribute
 
