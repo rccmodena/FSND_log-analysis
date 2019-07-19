@@ -1,3 +1,5 @@
+![Approved Image](https://rccmodena.github.io/FSND_build_a_portfolio_site/img/approved.png)
+
 # Project: Log Analysis
 
 This is the third project of the Udacity's Full Stack Web Developers Nanodegree.
